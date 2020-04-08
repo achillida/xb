@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+
+<html>
+
+
+<head>
+
+<title>Xarxa b&agrave;sica de Barcelona</title>
+
+<meta name="viewport" content="initial-scale=1.0">
+
+<meta charset="utf-8">
+
+
+<!-- Include Leaflet -->
+
+<script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+
+<link href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" rel="stylesheet">
+
+
+<!-- Include CARTO.js -->
+
+<script src="https://libs.cartocdn.com/carto.js/v4.1.11/carto.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat:600" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+<link href="https://carto.com/developers/carto-js/examples/maps/public/style.css" rel="stylesheet">
+
+
+</head>
+
+
+
+<body>
+
+<div id="map">
+</div>
+
+
+<!-- Description -->
+
+<aside class="toolbox">
+
+<div class="box">
+
+
+<header>
+
+<h1>Xarxa b&agrave;sica de Barcelona</h1>
+
+</header>
+
+
+<section>
+
+<p class="description open-sans">Xarxa b&agrave;sica i local de Barcelona.</p>
+
+
+
+<div id="controls">
+
+
+<ul>
+
+<li>
+<input type="checkbox" name="roadTypes[]" id="rondes" value="0" checked>
+<label for="rondes">Rondes</label>
+</li>
+<li>
+<input type="checkbox" name="roadTypes[]" id="acces" value="1" checked>
+<label for="acces">Vies d'acc&eacute;s</label>
+</li>
+<li>
+<input type="checkbox" name="roadTypes[]" id="primer" value="2" checked>
+<label for="primer">Connexi&oacute; primer nivell</label>
+</li>
+<li>
+<input type="checkbox" name="roadTypes[]" id="segon" value="3" checked>
+<label for="segon">Connexi&oacute; segon nivell</label>
+</li>
+<li>
+<input type="checkbox" name="roadTypes[]" id="tercer" value="4" checked>
+<label for="tercer">Connexi&oacute; tercer nivell</label>
+</li>
+<li>
+<input type="checkbox" name="roadTypes[]" id="resta" value="5" checked>
+<label for="resta">Resta carrers (xarxa local)</label>
+</li>
+</ul>
+          
+
+</div>
+
+</section>
+
+<footer class="js-footer"></footer>
+
+</div>
+
+</aside>
+
+
+<script>
+
+
+ function getSelectedRoadTypes () {
+        const inputControls = document.querySelectorAll('#controls input');
+        const values = [];
+
+        inputControls.forEach(input => input.checked ? values.push(input.value): null);
+        return values;
+      }
+
+
+      function applyFilters () {
+        roadTypeFilter.setFilters({ in: getSelectedRoadTypes() });
+     
+      }
+
+
+      function registerListeners () {
+        document.querySelectorAll('#controls input').forEach(
+          input => input.addEventListener('click', () => applyFilters())
+        );
+      }
+
+
+const map = L.map('map').setView([41.40,2.18], 13);
+
+map.scrollWheelZoom.enable();
+
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+
+maxZoom: 20
+}).addTo(map);
+
+
+
+
+const client = new carto.Client({
+
+        apiKey: 'default_public',
+
+        username: 'achillida'
+      });
+
+
+
+
+const roadTypeFilter = new carto.filter.Category('tipovia', { in: getSelectedRoadTypes() });
+
+
+
+const source = new carto.source.SQL('SELECT * FROM xarxa_basica_bcn');
+source.addFilter(roadTypeFilter);
+
+
+const style = new carto.style.CartoCSS(`
+        #layer {
+          line-width: ramp([tipovia], (2, 2, 1.5, 1, 1, 0.8), ("0", "1", "2", "3", "4", "5"));
+          line-color: ramp([tipovia], (#004D40, #004D40, #1A237E, #3949AB, #7986CB, #CCCCCC), ("0", "1", "2", "3", "4", "5"), "=");
+                 }
+      `);
+
+const layer = new carto.layer.Layer(source, style);
+
+      client.addLayer(layer);
+      client.getLeafletLayer().addTo(map);
+
+      registerListeners();
+
+
+</script>
+
+</body>
+
+</html>
